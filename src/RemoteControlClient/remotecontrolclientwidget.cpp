@@ -50,7 +50,7 @@ void RemoteControlClientWidget::onStartStop() {
 void RemoteControlClientWidget::onFrameAvailable( const QByteArray& imgData, const QSize& realSize ) {
     Q_UNUSED( realSize )
 
-    auto img = QImage::fromData( imgData, "JPG" );
+    auto img = QImage::fromData( qUncompress( imgData ), "JPG" );
     ui->viewLbl->setPixmap( QPixmap::fromImage( img ).scaled( ui->viewLbl->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation ) );
 }
 

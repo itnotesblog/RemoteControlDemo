@@ -4,7 +4,7 @@
 
 #include <QBuffer>
 
-static const QSize SCALED_FRAME_SIZE = QSize( 1024, 768 );
+static const QSize SCALED_FRAME_SIZE = QSize( 900, 550 );
 
 RemoteControlServer::RemoteControlServer( QObject* parent ) : QObject( parent ) {
     connect( &m_peer, SIGNAL( clientConnected( quint64 ) ), SLOT( onClientConnected( quint64 ) ) );
@@ -20,7 +20,7 @@ bool RemoteControlServer::start() {
 
 void RemoteControlServer::onClientConnected( quint64 clientID ) {
     qDebug() << "Client connected:" << clientID;
-    m_recorder.start();
+    m_recorder.start( 10 );
 }
 
 void RemoteControlServer::onClientDisconnected( quint64 clientID ) {
@@ -37,5 +37,5 @@ void RemoteControlServer::onFrameAvailable( const QImage& frame ) {
     QBuffer buffer( &ba );
     frame.scaled( SCALED_FRAME_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation ).save( &buffer, "JPG" );
 
-    m_peer.call( FRAME_AVAILABLE_SIG, ba, frame.size() );
+    m_peer.call( FRAME_AVAILABLE_SIG, qCompress( ba, 9 ), frame.size() );
 }
