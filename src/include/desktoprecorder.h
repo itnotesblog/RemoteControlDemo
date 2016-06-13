@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QImage>
+#include <QVarLengthArray>
 
 namespace ITNotes {
 
@@ -16,6 +17,9 @@ static const uint DEFAULT_FPS = 30;
 struct Cursor {
     QImage img;
     QPoint pos;
+
+    // Linux-reserved
+    QVarLengthArray< quint32 > buffer;
 };
 
 class DESKTOPRECORDERSHARED_EXPORT DesktopRecorder : public QObject {

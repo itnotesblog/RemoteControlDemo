@@ -10,7 +10,6 @@
 #ifdef Q_OS_LINUX
 #   include <X11/extensions/Xfixes.h>
 #   include <QX11Info>
-#   include <QVarLengthArray>
 #elif defined Q_OS_WIN32
 #   include <Windows.h>
 #endif
@@ -45,12 +44,12 @@ Cursor DesktopRecorder::captureCursor() const {
     Cursor cursor;
 
     if( auto curImage = XFixesGetCursorImage( QX11Info::display() ) ) {
-        QVarLengthArray< quint32 > pixels( curImage->width * curImage->height );
-        for( int i = 0; i < curImage->width * curImage->height; ++i ) {
-            pixels[ i ] = curImage->pixels[ i ] & 0xffffffff;
+        cursor.buffer.resize( curImage->width * curImage->height );
+        for( int i = 0; i < cursor.buffer.size(); ++i ) {
+            cursor.buffer[ i ] = curImage->pixels[ i ] & 0xffffffff;
         }
         cursor.img = QImage(
-            reinterpret_cast< const uchar* >( pixels.data() ),
+            reinterpret_cast< const uchar* >( cursor.buffer.data() ),
             curImage->width,
             curImage->height,
             QImage::Format_ARGB32_Premultiplied
