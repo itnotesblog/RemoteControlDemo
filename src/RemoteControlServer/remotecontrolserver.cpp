@@ -4,6 +4,8 @@
 
 #include <QBuffer>
 
+static const QSize SCALED_FRAME_SIZE = QSize( 1024, 768 );
+
 RemoteControlServer::RemoteControlServer( QObject* parent ) : QObject( parent ) {
     connect( &m_peer, SIGNAL( clientConnected( quint64 ) ), SLOT( onClientConnected( quint64 ) ) );
     connect( &m_peer, SIGNAL( clientDisconnected( quint64 ) ), SLOT( onClientDisconnected( quint64 ) ) );
@@ -33,7 +35,7 @@ void RemoteControlServer::onEnableCursorCapture( quint64, bool enabled ) {
 void RemoteControlServer::onFrameAvailable( const QImage& frame ) {
     QByteArray ba;
     QBuffer buffer( &ba );
-    frame.save( &buffer, "JPG" );
+    frame.scaled( SCALED_FRAME_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation ).save( &buffer, "JPG" );
 
-    m_peer.call( FRAME_AVAILABLE_SIG, ba );
+    m_peer.call( FRAME_AVAILABLE_SIG, ba, frame.size() );
 }

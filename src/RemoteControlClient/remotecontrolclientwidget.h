@@ -17,7 +17,7 @@ public:
 
 private slots:
     void onStartStop();
-    void onFrameAvailable( const QByteArray& imgData );
+    void onFrameAvailable( const QByteArray& imgData, const QSize& realSize );
 
     void onConnectedToServer();
     void onDisconnectedFromServer();

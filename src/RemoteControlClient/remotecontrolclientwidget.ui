@@ -25,7 +25,7 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="6,0,0,0,2">
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -57,6 +57,13 @@
       <widget class="QPushButton" name="stopBn">
        <property name="text">
         <string>Стоп</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="ipEd">
+       <property name="text">
+        <string>127.0.0.1</string>
        </property>
       </widget>
      </item>

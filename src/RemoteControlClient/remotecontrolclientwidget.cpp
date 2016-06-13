@@ -26,7 +26,7 @@ RemoteControlClientWidget::RemoteControlClientWidget( QWidget* parent ) :
         SLOT( onServerError( const QAbstractSocket::SocketError& ) )
     );
 
-    m_peer.attachSlot( FRAME_AVAILABLE_SIG, this, SLOT( onFrameAvailable( QByteArray ) ) );
+    m_peer.attachSlot( FRAME_AVAILABLE_SIG, this, SLOT( onFrameAvailable( QByteArray, QSize ) ) );
     m_peer.attachSignal( ui->captureCursorChkBox, SIGNAL( clicked( bool ) ), ENABLE_CURSOR_CAPTURE_SIG );
 }
 
@@ -44,9 +44,12 @@ void RemoteControlClientWidget::onStartStop() {
 
     ui->startBn->setVisible( !ui->startBn->isVisible() );
     ui->stopBn->setVisible( !ui->stopBn->isVisible() );
+    ui->ipEd->setEnabled( !ui->stopBn->isVisible() );
 }
 
-void RemoteControlClientWidget::onFrameAvailable( const QByteArray& imgData ) {
+void RemoteControlClientWidget::onFrameAvailable( const QByteArray& imgData, const QSize& realSize ) {
+    Q_UNUSED( realSize )
+
     auto img = QImage::fromData( imgData, "JPG" );
     ui->viewLbl->setPixmap( QPixmap::fromImage( img ).scaled( ui->viewLbl->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation ) );
 }
@@ -57,6 +60,7 @@ void RemoteControlClientWidget::onConnectedToServer() {
 
     ui->startBn->setVisible( false );
     ui->stopBn->setVisible( true );
+    ui->ipEd->setEnabled( false );
 
     m_peer.call( ENABLE_CURSOR_CAPTURE_SIG, ui->captureCursorChkBox->isChecked() );
 }
@@ -76,6 +80,6 @@ void RemoteControlClientWidget::onServerError( const QAbstractSocket::SocketErro
 
 void RemoteControlClientWidget::refreshConnection() {
     if( !m_connected ) {
-        m_peer.connect( "localhost", PORT );
+        m_peer.connect( ui->ipEd->text(), PORT );
     }
 }
