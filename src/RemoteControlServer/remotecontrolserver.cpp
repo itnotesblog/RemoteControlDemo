@@ -3,6 +3,7 @@
 #include <shareddefs.h>
 
 #include <QBuffer>
+#include <QCursor>
 
 static const QSize SCALED_FRAME_SIZE = QSize( 900, 550 );
 
@@ -12,6 +13,7 @@ RemoteControlServer::RemoteControlServer( QObject* parent ) : QObject( parent ) 
 
     connect( &m_recorder, SIGNAL( frameAvailable( QImage ) ), SLOT( onFrameAvailable( QImage ) ) );
     m_peer.attachSlot( ENABLE_CURSOR_CAPTURE_SIG, this, SLOT( onEnableCursorCapture( quint64, bool ) ) );
+    m_peer.attachSlot( MOUSE_MOVE_SIG, this, SLOT( onMouseMoveRequest( quint64, QPoint ) ) );
 }
 
 bool RemoteControlServer::start() {
@@ -30,6 +32,10 @@ void RemoteControlServer::onClientDisconnected( quint64 clientID ) {
 
 void RemoteControlServer::onEnableCursorCapture( quint64, bool enabled ) {
     m_recorder.enableCursorCapture( enabled );
+}
+
+void RemoteControlServer::onMouseMoveRequest( quint64, const QPoint& pos ) {
+    QCursor::setPos( pos );
 }
 
 void RemoteControlServer::onFrameAvailable( const QImage& frame ) {

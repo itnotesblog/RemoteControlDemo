@@ -17,6 +17,7 @@ private slots:
     void onClientDisconnected( quint64 clientID );
 
     void onEnableCursorCapture( quint64, bool enabled );
+    void onMouseMoveRequest( quint64, const QPoint& pos );
 
     void onFrameAvailable( const QImage& frame );
 

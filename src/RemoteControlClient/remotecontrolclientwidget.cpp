@@ -3,14 +3,15 @@
 
 #include <shareddefs.h>
 
-#include <QTimer>
+#include <QMouseEvent>
 
 static const int CONNECTION_RETRY_TIME_OUT_MSEC = 2 * 1000; // 2 секунды
 
 RemoteControlClientWidget::RemoteControlClientWidget( QWidget* parent ) :
     QWidget( parent ),
     ui( new Ui::RemoteControlClientWidget ),
-    m_connected( false ) {
+    m_connected( false ),
+    m_mouseMoved( false ) {
     ui->setupUi( this );
 
     ui->stopBn->hide();
@@ -28,10 +29,43 @@ RemoteControlClientWidget::RemoteControlClientWidget( QWidget* parent ) :
 
     m_peer.attachSlot( FRAME_AVAILABLE_SIG, this, SLOT( onFrameAvailable( QByteArray, QSize ) ) );
     m_peer.attachSignal( ui->captureCursorChkBox, SIGNAL( clicked( bool ) ), ENABLE_CURSOR_CAPTURE_SIG );
+
+    setMouseTracking( true );
+    ui->viewLbl->setMouseTracking( true );
+
+    connect( &m_mouseMoveTimer, SIGNAL( timeout() ), SLOT( onMouseMoveTimeOut() ) );
+    m_mouseMoveTimer.start( 500 );
 }
 
 RemoteControlClientWidget::~RemoteControlClientWidget() {
     delete ui;
+}
+
+void RemoteControlClientWidget::mouseMoveEvent( QMouseEvent* e ) {
+    if( m_connected && ui->viewLbl->pixmap() ) {
+        auto pos = ui->viewLbl->mapFromParent( e->pos() );
+        auto viewRect = ui->viewLbl->rect();
+        auto imgRect =  ui->viewLbl->pixmap()->rect();
+
+        auto xOffset = ( viewRect.width() - imgRect.width() ) / 2;
+        auto yOffset = ( viewRect.height() - imgRect.height() ) / 2;
+
+        pos = QPoint( pos.x() - xOffset,  pos.y() - yOffset );
+
+        m_mouseMoved = ( m_mousePos != pos );
+        if( m_mouseMoved ) {
+            m_mousePos = pos;
+            if( m_mousePos.x() < 0 )  m_mousePos.setX( 0 );
+            if( m_mousePos.y() < 0 )  m_mousePos.setY( 0 );
+
+            auto ratio = m_realFrameSize.width() / static_cast< double >( imgRect.width() );
+            m_mousePos.setX( m_mousePos.x() * ratio );
+            m_mousePos.setY( m_mousePos.y() * ratio );
+
+            if( m_realFrameSize.width() < m_mousePos.x() )  m_mousePos.setX( m_realFrameSize.width() );
+            if( m_realFrameSize.height() < m_mousePos.y() )  m_mousePos.setY( m_realFrameSize.height() );
+        }
+    }
 }
 
 void RemoteControlClientWidget::onStartStop() {
@@ -48,7 +82,7 @@ void RemoteControlClientWidget::onStartStop() {
 }
 
 void RemoteControlClientWidget::onFrameAvailable( const QByteArray& imgData, const QSize& realSize ) {
-    Q_UNUSED( realSize )
+    m_realFrameSize = realSize;
 
     auto img = QImage::fromData( qUncompress( imgData ), "JPG" );
     ui->viewLbl->setPixmap( QPixmap::fromImage( img ).scaled( ui->viewLbl->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation ) );
@@ -81,5 +115,12 @@ void RemoteControlClientWidget::onServerError( const QAbstractSocket::SocketErro
 void RemoteControlClientWidget::refreshConnection() {
     if( !m_connected ) {
         m_peer.connect( ui->ipEd->text(), PORT );
+    }
+}
+
+void RemoteControlClientWidget::onMouseMoveTimeOut() {
+    if( m_mouseMoved ) {
+        m_peer.call( MOUSE_MOVE_SIG, m_mousePos );
+        m_mouseMoved = false;
     }
 }
