@@ -20,6 +20,12 @@ include( ../../app.pri )
 
 LIBS += -lDesktopRecorder$${LIB_SUFFIX}
 LIBS += -L$${LIBS_PATH}/LibQxt/
-win32: LIBS += -lQxtCore$${LIB_SUFFIX} -lQxtNetwork$${LIB_SUFFIX}
-linux-g++: LIBS += -lQxtCore -lQxtNetwork
-linux-g++: QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/../../lib.$${OS_SUFFIX}/LibQxt/
+win32 {
+    LIBS += -lQxtCore$${LIB_SUFFIX} -lQxtNetwork$${LIB_SUFFIX}
+    LIBS += -lUser32
+}
+linux-g++ {
+    LIBS += -lQxtCore -lQxtNetwork
+    LIBS += -lX11 -lXtst
+    QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/../../lib.$${OS_SUFFIX}/LibQxt/
+}

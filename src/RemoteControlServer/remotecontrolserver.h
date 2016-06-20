@@ -18,6 +18,9 @@ private slots:
 
     void onEnableCursorCapture( quint64, bool enabled );
     void onMouseMoveRequest( quint64, const QPoint& pos );
+    void onMousePressRequest( quint64, const QPoint& pos, int mouseBtn );
+    void onMouseReleaseRequest( quint64, const QPoint& pos, int mouseBtn );
+    void onMouseWheelRequest( quint64, int delta );
 
     void onFrameAvailable( const QImage& frame );
 

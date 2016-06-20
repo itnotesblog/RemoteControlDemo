@@ -4,8 +4,10 @@
 #include <shareddefs.h>
 
 #include <QMouseEvent>
+#include <QWheelEvent>
 
 static const int CONNECTION_RETRY_TIME_OUT_MSEC = 2 * 1000; // 2 секунды
+static const int MOUSE_FPS = 10;
 
 RemoteControlClientWidget::RemoteControlClientWidget( QWidget* parent ) :
     QWidget( parent ),
@@ -34,7 +36,7 @@ RemoteControlClientWidget::RemoteControlClientWidget( QWidget* parent ) :
     ui->viewLbl->setMouseTracking( true );
 
     connect( &m_mouseMoveTimer, SIGNAL( timeout() ), SLOT( onMouseMoveTimeOut() ) );
-    m_mouseMoveTimer.start( 500 );
+    m_mouseMoveTimer.start( 1000 / MOUSE_FPS );
 }
 
 RemoteControlClientWidget::~RemoteControlClientWidget() {
@@ -42,30 +44,53 @@ RemoteControlClientWidget::~RemoteControlClientWidget() {
 }
 
 void RemoteControlClientWidget::mouseMoveEvent( QMouseEvent* e ) {
-    if( m_connected && ui->viewLbl->pixmap() ) {
-        auto pos = ui->viewLbl->mapFromParent( e->pos() );
+    if( m_connected ) {
+        auto pos = toRealPos( e->pos() );
+        m_mouseMoved = ( m_mousePos != pos );
+        m_mousePos = pos;
+    }
+}
+
+void RemoteControlClientWidget::mousePressEvent( QMouseEvent* e ) {
+    m_mousePos = toRealPos( e->pos() );
+    m_peer.call( MOUSE_PRESS_SIG, m_mousePos, e->button() );
+}
+
+void RemoteControlClientWidget::mouseReleaseEvent( QMouseEvent* e ) {
+    m_mousePos = toRealPos( e->pos() );
+    m_peer.call( MOUSE_RELEASE_SIG, m_mousePos, e->button() );
+}
+
+void RemoteControlClientWidget::wheelEvent( QWheelEvent* e ) {
+    m_peer.call( MOUSE_WHEEL_SIG, e->delta() );
+}
+
+QPoint RemoteControlClientWidget::toRealPos( const QPoint& mousePos ) {
+    auto realPos = ui->viewLbl->mapFromParent( mousePos );
+
+    if( ui->viewLbl->pixmap() ) {
         auto viewRect = ui->viewLbl->rect();
         auto imgRect =  ui->viewLbl->pixmap()->rect();
 
         auto xOffset = ( viewRect.width() - imgRect.width() ) / 2;
         auto yOffset = ( viewRect.height() - imgRect.height() ) / 2;
 
-        pos = QPoint( pos.x() - xOffset,  pos.y() - yOffset );
+        realPos = QPoint( realPos.x() - xOffset,  realPos.y() - yOffset );
 
-        m_mouseMoved = ( m_mousePos != pos );
-        if( m_mouseMoved ) {
-            m_mousePos = pos;
-            if( m_mousePos.x() < 0 )  m_mousePos.setX( 0 );
-            if( m_mousePos.y() < 0 )  m_mousePos.setY( 0 );
+        if( realPos.x() < 0 )  realPos.setX( 0 );
+        if( realPos.y() < 0 )  realPos.setY( 0 );
 
+        if( imgRect.width() != 0 ) {
             auto ratio = m_realFrameSize.width() / static_cast< double >( imgRect.width() );
-            m_mousePos.setX( m_mousePos.x() * ratio );
-            m_mousePos.setY( m_mousePos.y() * ratio );
+            realPos.setX( realPos.x() * ratio );
+            realPos.setY( realPos.y() * ratio );
 
-            if( m_realFrameSize.width() < m_mousePos.x() )  m_mousePos.setX( m_realFrameSize.width() );
-            if( m_realFrameSize.height() < m_mousePos.y() )  m_mousePos.setY( m_realFrameSize.height() );
+            if( m_realFrameSize.width() < realPos.x() )  realPos.setX( m_realFrameSize.width() );
+            if( m_realFrameSize.height() < realPos.y() )  realPos.setY( m_realFrameSize.height() );
         }
     }
+
+    return realPos;
 }
 
 void RemoteControlClientWidget::onStartStop() {

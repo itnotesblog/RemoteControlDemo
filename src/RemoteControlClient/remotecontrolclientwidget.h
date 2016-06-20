@@ -18,6 +18,11 @@ public:
 
 private:
     void mouseMoveEvent( QMouseEvent* e );
+    void mousePressEvent( QMouseEvent* e );
+    void mouseReleaseEvent( QMouseEvent* e );
+    void wheelEvent( QWheelEvent* e );
+
+    QPoint toRealPos( const QPoint& mousePos );
 
 private slots:
     void onStartStop();
