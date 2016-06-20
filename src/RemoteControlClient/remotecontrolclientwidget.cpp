@@ -52,17 +52,23 @@ void RemoteControlClientWidget::mouseMoveEvent( QMouseEvent* e ) {
 }
 
 void RemoteControlClientWidget::mousePressEvent( QMouseEvent* e ) {
-    m_mousePos = toRealPos( e->pos() );
-    m_peer.call( MOUSE_PRESS_SIG, m_mousePos, e->button() );
+    if( m_connected ) {
+        m_mousePos = toRealPos( e->pos() );
+        m_peer.call( MOUSE_PRESS_SIG, m_mousePos, e->button() );
+    }
 }
 
 void RemoteControlClientWidget::mouseReleaseEvent( QMouseEvent* e ) {
-    m_mousePos = toRealPos( e->pos() );
-    m_peer.call( MOUSE_RELEASE_SIG, m_mousePos, e->button() );
+    if( m_connected ) {
+        m_mousePos = toRealPos( e->pos() );
+        m_peer.call( MOUSE_RELEASE_SIG, m_mousePos, e->button() );
+    }
 }
 
 void RemoteControlClientWidget::wheelEvent( QWheelEvent* e ) {
-    m_peer.call( MOUSE_WHEEL_SIG, e->delta() );
+    if( m_connected ) {
+        m_peer.call( MOUSE_WHEEL_SIG, e->delta() );
+    }
 }
 
 QPoint RemoteControlClientWidget::toRealPos( const QPoint& mousePos ) {
