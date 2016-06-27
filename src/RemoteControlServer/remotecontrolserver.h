@@ -5,6 +5,8 @@
 #include <QxtRPCPeer>
 #include <desktoprecorder.h>
 
+#include "keymapper.h"
+
 class RemoteControlServer : public QObject {
     Q_OBJECT
 public:
@@ -21,6 +23,8 @@ private slots:
     void onMousePressRequest( quint64, const QPoint& pos, int mouseBtn );
     void onMouseReleaseRequest( quint64, const QPoint& pos, int mouseBtn );
     void onMouseWheelRequest( quint64, int delta );
+    void onKeyPressRequest( quint64, int keyCode, const QString& text );
+    void onKeyReleaseRequest( quint64, int keyCode, const QString& text );
 
     void onFrameAvailable( const QImage& frame );
 

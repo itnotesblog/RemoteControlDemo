@@ -22,6 +22,9 @@ private:
     void mouseReleaseEvent( QMouseEvent* e );
     void wheelEvent( QWheelEvent* e );
 
+    void keyPressEvent( QKeyEvent* e );
+    void keyReleaseEvent( QKeyEvent* e );
+
     QPoint toRealPos( const QPoint& mousePos );
 
 private slots:

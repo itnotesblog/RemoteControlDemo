@@ -37,6 +37,8 @@ RemoteControlClientWidget::RemoteControlClientWidget( QWidget* parent ) :
 
     connect( &m_mouseMoveTimer, SIGNAL( timeout() ), SLOT( onMouseMoveTimeOut() ) );
     m_mouseMoveTimer.start( 1000 / MOUSE_FPS );
+
+    setFocusPolicy( Qt::StrongFocus );
 }
 
 RemoteControlClientWidget::~RemoteControlClientWidget() {
@@ -68,6 +70,18 @@ void RemoteControlClientWidget::mouseReleaseEvent( QMouseEvent* e ) {
 void RemoteControlClientWidget::wheelEvent( QWheelEvent* e ) {
     if( m_connected ) {
         m_peer.call( MOUSE_WHEEL_SIG, e->delta() );
+    }
+}
+
+void RemoteControlClientWidget::keyPressEvent( QKeyEvent* e ) {
+    if( m_connected ) {
+        m_peer.call( KEY_PRESS_SIG, e->key(), e->text() );
+    }
+}
+
+void RemoteControlClientWidget::keyReleaseEvent( QKeyEvent* e ) {
+    if( m_connected ) {
+        m_peer.call( KEY_RELEASE_SIG, e->key(), e->text() );
     }
 }
 

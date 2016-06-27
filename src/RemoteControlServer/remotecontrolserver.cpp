@@ -4,8 +4,12 @@
 
 #include <QBuffer>
 #include <QCursor>
+#include <QKeyEvent>
+#include <QEvent>
 
 #include <QDesktopWidget>
+
+#include <string>
 
 #ifdef Q_OS_LINUX
 #   include <X11/extensions/XTest.h>
@@ -25,6 +29,8 @@ RemoteControlServer::RemoteControlServer( QObject* parent ) : QObject( parent ) 
     m_peer.attachSlot( MOUSE_PRESS_SIG, this, SLOT( onMousePressRequest( quint64, QPoint, int ) ) );
     m_peer.attachSlot( MOUSE_RELEASE_SIG, this, SLOT( onMouseReleaseRequest( quint64, QPoint, int ) ) );
     m_peer.attachSlot( MOUSE_WHEEL_SIG, this, SLOT( onMouseWheelRequest( quint64, int ) ) );
+    m_peer.attachSlot( KEY_PRESS_SIG, this, SLOT( onKeyPressRequest( quint64, int, QString ) ) );
+    m_peer.attachSlot( KEY_RELEASE_SIG, this, SLOT( onKeyReleaseRequest( quint64, int, QString ) ) );
 }
 
 bool RemoteControlServer::start() {
@@ -99,6 +105,11 @@ void RemoteControlServer::onMouseWheelRequest( quint64, int delta ) {
     XFlush( display );
     XCloseDisplay( display );
 }
+
+void onKeyAction( bool pressed, int keyCode, const QString& text ) {
+    // TODO: Not implemented yet
+}
+
 #elif defined Q_OS_WIN32
 void onMouseAction( const QPoint& pos, int flags ) {
     QCursor::setPos( pos );
@@ -153,7 +164,33 @@ void RemoteControlServer::onMouseWheelRequest( quint64, int delta ) {
     input.mi.dwFlags = MOUSEEVENTF_WHEEL;
     SendInput( 1, &input, sizeof( input ) );
 }
+
+void onKeyAction( bool pressed, int keyCode, const QString& text ) {
+    static KeyMapper keyMapper;
+
+    INPUT input;
+    input.type = INPUT_KEYBOARD;
+    input.ki.dwFlags = pressed ? 0 : KEYEVENTF_KEYUP;
+    input.ki.time = 0;
+    input.ki.dwExtraInfo = static_cast< ULONG_PTR >( 0 );
+    if( ( input.ki.wVk = keyMapper.findNativeVirtualKeyCode( Qt::Key( keyCode ) ) ) != 0 ) {
+        input.ki.wScan = 0;
+    } else if( !text.isEmpty() ) {
+        input.ki.dwFlags |= KEYEVENTF_UNICODE;
+        input.ki.wScan = static_cast< WORD >( text.at( 0 ).unicode() );
+    }
+
+    SendInput( 1, &input, sizeof( input ) );
+}
 #endif
+
+void RemoteControlServer::onKeyPressRequest( quint64, int keyCode, const QString& text ) {
+    onKeyAction( true, keyCode, text );
+}
+
+void RemoteControlServer::onKeyReleaseRequest( quint64, int keyCode, const QString& text ) {
+    onKeyAction( false, keyCode, text );
+}
 
 void RemoteControlServer::onFrameAvailable( const QImage& frame ) {
     QByteArray ba;
