@@ -107,7 +107,41 @@ void RemoteControlServer::onMouseWheelRequest( quint64, int delta ) {
 }
 
 void onKeyAction( bool pressed, int keyCode, const QString& text ) {
-    // TODO: Not implemented yet
+    static KeyMapper keyMapper;
+    static bool shiftPressed = false;
+
+    if( keyCode == Qt::Key_Shift ) shiftPressed = pressed;
+
+    Display* display = XOpenDisplay( nullptr );
+    if( display == nullptr ) {
+        return;
+    }
+
+    uint vKeyCode = 0;
+    if( ( vKeyCode = keyMapper.findNativeVirtualKeyCode( Qt::Key( keyCode ) ) ) == 0 && !text.isEmpty() ) {
+        if( shiftPressed ) onKeyAction( false, Qt::Key_Shift, "" );
+
+        QString uSym = QString().sprintf( "U%04X", text.at( 0 ).unicode() );
+        auto keySym = XStringToKeysym( uSym.toStdString().c_str() );
+
+        int min, max, numcodes;
+        XDisplayKeycodes( display, &min, &max );
+        if( KeySym* keySyms = XGetKeyboardMapping( display, min, max - min + 1, &numcodes ) ) {
+            keySyms[ ( max - min - 1 ) * numcodes ] = keySym;
+            XChangeKeyboardMapping( display, min, numcodes, keySyms, max - min );
+            XFree( keySyms );
+            XFlush( display );
+
+            vKeyCode = XKeysymToKeycode( display, keySym );
+        }
+
+        if( shiftPressed ) onKeyAction( true, Qt::Key_Shift, "" );
+    }
+
+    XTestFakeKeyEvent( display, vKeyCode, pressed, 0 );
+
+    XFlush( display );
+    XCloseDisplay( display );
 }
 
 #elif defined Q_OS_WIN32
